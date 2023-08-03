@@ -15,3 +15,9 @@ class LoadCurrentWeather extends WeatherEvent {
   @override
   List<Object> get props => [];
 }
+
+class UpdateLocation extends WeatherEvent {
+  final String newLocation;
+
+  const UpdateLocation(this.newLocation);
+}

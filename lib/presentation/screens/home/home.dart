@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:weather_bloc/constants.dart';
@@ -8,30 +10,53 @@ import '../../../data/models/current_weather_model.dart';
 import '../../../widgets/custom_clipper.dart';
 import '../../../widgets/shimmer_loading.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  TextEditingController locController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    Timer.periodic(const Duration(minutes: 15), (timer) {
+      BlocProvider.of<WeatherBloc>(context).add(const LoadCurrentWeather());
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: backgrd,
       body: BlocBuilder<WeatherBloc, WeatherState>(
-        builder: (context, weatherState) { 
-          if(weatherState is WeatherLoadingState){
+        builder: (context, weatherState) {
+          if (weatherState is WeatherLoadingState) {
             return const ShimmerLoading();
           }
-          if(weatherState is WeatherLoadedState ){
+          if (weatherState is WeatherLoadedState) {
             return BlocBuilder<SwipeCubit, bool>(
               builder: (context, state) {
-                return SafeArea(
-                  child: Column(
-                    children: [
-                      _buildDayContainer(context, state, weatherState.data),
-                      const SizedBox(
-                        height: 25,
-                      ),
-                      _buildNightContainer(context, state, weatherState.data)
-                    ],
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    Future.delayed(const Duration(seconds: 1),
+                    () => BlocProvider.of<WeatherBloc>(context).add(const LoadCurrentWeather()),
+                    );
+                  },
+                  child: SafeArea(
+                    child: Column(
+                      children: [
+                        _buildDayContainer(context, state, weatherState.data),
+                        const SizedBox(
+                          height: 25,
+                        ),
+                        _buildNightContainer(context, state, weatherState.data)
+                      ],
+                    ),
                   ),
                 );
               },
@@ -43,7 +68,8 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  _buildDayContainer(BuildContext context, bool state, CurrentWeatherModel weatherState) {
+  _buildDayContainer(
+      BuildContext context, bool state, CurrentWeatherModel weatherState) {
     return state != true
         ? Expanded(
             flex: 2,
@@ -161,14 +187,17 @@ class HomeScreen extends StatelessWidget {
                                   color: white,
                                   size: 25,
                                 )),
-                            const Expanded(
+                            Expanded(
                                 flex: 1,
                                 child: Align(
                                     alignment: Alignment.centerRight,
-                                    child: Icon(
-                                      Icons.menu_rounded,
-                                      color: white,
-                                      size: 25,
+                                    child: GestureDetector(
+                                      onTap: menutap,
+                                      child: const Icon(
+                                        Icons.menu_rounded,
+                                        color: white,
+                                        size: 25,
+                                      ),
                                     ))),
                           ],
                         ),
@@ -204,10 +233,12 @@ class HomeScreen extends StatelessWidget {
                                 ),
                                 RichText(
                                     text: TextSpan(
-                                        text: weatherState.current.windKph.toString(),
+                                        text: weatherState.current.windKph
+                                            .toString(),
                                         style: headingStyle,
                                         children: <TextSpan>[
-                                      TextSpan(text: "k/h", style: subtitleStyle)
+                                      TextSpan(
+                                          text: "k/h", style: subtitleStyle)
                                     ])),
                               ],
                             ),
@@ -222,7 +253,8 @@ class HomeScreen extends StatelessWidget {
                                 ),
                                 RichText(
                                     text: TextSpan(
-                                        text: weatherState.current.humidity.toString(),
+                                        text: weatherState.current.humidity
+                                            .toString(),
                                         style: headingStyle,
                                         children: <TextSpan>[
                                       TextSpan(text: "%", style: subtitleStyle)
@@ -237,7 +269,8 @@ class HomeScreen extends StatelessWidget {
                                 ),
                                 RichText(
                                     text: TextSpan(
-                                        text: weatherState.current.precipIn.toString(),
+                                        text: weatherState.current.precipIn
+                                            .toString(),
                                         style: headingStyle,
                                         children: <TextSpan>[
                                       TextSpan(text: "In", style: subtitleStyle)
@@ -251,11 +284,11 @@ class HomeScreen extends StatelessWidget {
                   )
                 ],
               ),
-            )
-          );
+            ));
   }
 
-  _buildNightContainer(BuildContext context, bool state, CurrentWeatherModel weatherState) {
+  _buildNightContainer(
+      BuildContext context, bool state, CurrentWeatherModel weatherState) {
     return state != true
         ? Expanded(
             flex: 5,
@@ -265,10 +298,10 @@ class HomeScreen extends StatelessWidget {
               decoration: BoxDecoration(
                   color: dark,
                   gradient: const LinearGradient(
-                      colors: [dark, dark, dark],
+                      colors: [darklight, darkmid, darkdrk],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      stops: [0.3, 0.6, 1]),
+                      stops: [0.1, 0.4, 1]),
                   borderRadius: BorderRadius.circular(40)),
               child: Stack(
                 alignment: Alignment.topCenter,
@@ -323,12 +356,12 @@ class HomeScreen extends StatelessWidget {
                         ),
                         //degree
                         Text(
-                          '32',
+                          weatherState.current.tempC.toString().split('.')[0],
                           style: headingStyle.copyWith(
                               fontSize: 70, fontWeight: FontWeight.bold),
                         ),
                         //location
-                        Text('Kathmandu', style: headingStyle),
+                        Text(weatherState.location.name, style: headingStyle),
                         const Spacer(),
                         //more info
                         Row(
@@ -345,10 +378,12 @@ class HomeScreen extends StatelessWidget {
                                 ),
                                 RichText(
                                     text: TextSpan(
-                                        text: "15",
+                                        text: weatherState.current.windKph
+                                            .toString(),
                                         style: headingStyle,
                                         children: <TextSpan>[
-                                      TextSpan(text: "km", style: subtitleStyle)
+                                      TextSpan(
+                                          text: "k/h", style: subtitleStyle)
                                     ])),
                               ],
                             ),
@@ -363,7 +398,8 @@ class HomeScreen extends StatelessWidget {
                                 ),
                                 RichText(
                                     text: TextSpan(
-                                        text: "29",
+                                        text: weatherState.current.humidity
+                                            .toString(),
                                         style: headingStyle,
                                         children: <TextSpan>[
                                       TextSpan(text: "%", style: subtitleStyle)
@@ -378,10 +414,11 @@ class HomeScreen extends StatelessWidget {
                                 ),
                                 RichText(
                                     text: TextSpan(
-                                        text: "45",
+                                        text: weatherState.current.precipIn
+                                            .toString(),
                                         style: headingStyle,
                                         children: <TextSpan>[
-                                      TextSpan(text: "%", style: subtitleStyle)
+                                      TextSpan(text: "In", style: subtitleStyle)
                                     ])),
                               ],
                             )
@@ -437,7 +474,7 @@ class HomeScreen extends StatelessWidget {
                           const Spacer(),
                           //degree
                           Text(
-                            '32',
+                            weatherState.current.tempC.toString().split('.')[0],
                             style: headingStyle.copyWith(
                                 color: whiteDrk,
                                 fontSize: 50,
@@ -457,9 +494,63 @@ class HomeScreen extends StatelessWidget {
                         height: 60,
                       )
                     ],
-                  )
-                ),
-            )
-          );
+                  )),
+            ));
+  }
+
+  void menutap() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: backgrd,
+          title: Text(
+            'Settings',
+            style: titleStyle,
+          ),
+          content: BlocProvider(
+            create: (context) => WeatherBloc(),
+            child: Builder(
+              builder: (context) {
+                return SizedBox(
+                  height: MediaQuery.of(context).size.height - 400,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                              flex: 1,
+                              child: Text("Loaction", style: subtitleStyle)),
+                          Expanded(
+                              flex: 1,
+                              child: TextField(
+                                controller: locController,
+                                style: subtitleStyle,
+                                decoration: const InputDecoration(
+                                    enabledBorder: UnderlineInputBorder(
+                                        borderSide: BorderSide(color: white))),
+                              )),
+                        ],
+                      ),
+                      MaterialButton(
+                          color: primary,
+                          child: Text('Submit', style: titleStyle),
+                          onPressed: () {
+                            // context.read<WeatherBloc>().location = locController.text;
+                            BlocProvider.of<WeatherBloc>(context)
+                                .add(UpdateLocation(locController.text));
+                            BlocProvider.of<WeatherBloc>(context).add(const LoadCurrentWeather());
+                            Navigator.pop(context);
+                          })
+                    ],
+                  ),
+                );
+              }
+            ),
+          ),
+        );
+      },
+    );
   }
 }
