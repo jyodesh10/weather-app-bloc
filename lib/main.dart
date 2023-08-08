@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:weather_bloc/presentation/bloc/bloc/weather_bloc.dart';
+import 'package:weather_bloc/presentation/bloc/cubit/location_cubit.dart';
 import 'package:weather_bloc/presentation/bloc/cubit/swipe_cubit.dart';
 import 'package:weather_bloc/presentation/screens/home/home.dart';
 
@@ -24,6 +25,7 @@ class MyApp extends StatelessWidget {
         providers: [
           BlocProvider(create: (context) => SwipeCubit()),
           BlocProvider(create: (context) => WeatherBloc()..add(const LoadCurrentWeather()) ),
+          BlocProvider(create: (context) => LocationCubit()),
         ],
         child: 
         // const AnimationPrac() 

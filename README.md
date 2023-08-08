@@ -1,16 +1,12 @@
-# weather_bloc
+# Weather Application
 
-A new Flutter project.
+Api
+https://www.weatherapi.com/
 
-## Getting Started
+UI Reference
+https://www.behance.net/gallery/121439987/Weather-mobile-app
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Screenshots
+:-------------------------:|:-------------------------:
+![My Image](screenshots/day.png) |  ![My Image](screenshots/night.png)
+:-------------------------:|:-------------------------:
