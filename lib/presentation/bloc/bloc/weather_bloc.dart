@@ -9,7 +9,7 @@ part 'weather_event.dart';
 part 'weather_state.dart';
 
 class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
-  String location = 'kathmandu';
+  String location = 'Lalitpur';
   WeatherBloc() : super(WeatherInitial()) {
     on<LoadCurrentWeather>((event, emit) async {
       emit(WeatherLoadingState());
