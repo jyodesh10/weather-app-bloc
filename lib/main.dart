@@ -16,20 +16,18 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MultiBlocProvider(
-        providers: [
-          BlocProvider(create: (context) => SwipeCubit()),
-          BlocProvider(create: (context) => WeatherBloc()..add(const LoadCurrentWeather()) ),
-          BlocProvider(create: (context) => LocationCubit()),
-        ],
-        child: 
-        // const AnimationPrac() 
-        const HomeScreen(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => SwipeCubit()),
+        BlocProvider(create: (context) => LocationCubit()..loadLocation()),
+        BlocProvider(create: (context) => WeatherBloc()),
+      ],
+      child: MaterialApp(
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: const HomeScreen(),
       ),
     );
   }

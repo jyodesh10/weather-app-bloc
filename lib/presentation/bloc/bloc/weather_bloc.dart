@@ -13,20 +13,21 @@ class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
   WeatherBloc() : super(WeatherInitial()) {
     on<LoadCurrentWeather>((event, emit) async {
       emit(WeatherLoadingState());
-      final response = await http.get(Uri.parse('$baseUrl/forecast.json?key=$weatherKey&q=$location'),);
+      final response = await http.get(Uri.parse('$baseUrl/forecast.json?key=$weatherKey&q=${event.location}}'),);
       if (response.statusCode == 200) {
         final Map<String, dynamic> userJson = jsonDecode(response.body);
         var data = CurrentWeatherModel.fromJson(userJson);
         emit(WeatherLoadedState(data: data));
       } else {
-        emit(WeatherErrorState());
+        final Map<String, dynamic> userJson = jsonDecode(response.body);
+        emit(WeatherErrorState(userJson["error"]["message"].toString()));
       }
     });
 
     on<UpdateLocation>((event, emit) {
       location = event.newLocation;
-      emit(WeatherLoadingState());
-      // add(const LoadCurrentWeather());
+      // emit(WeatherLoadingState());
+      add(LoadCurrentWeather(location));
     });
   }
 }

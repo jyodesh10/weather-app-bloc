@@ -9,7 +9,8 @@ abstract class WeatherEvent extends Equatable{
 
 
 class LoadCurrentWeather extends WeatherEvent {
-  const LoadCurrentWeather();
+  final String location;
+  const LoadCurrentWeather(this.location);
 
 
   @override

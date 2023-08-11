@@ -2,14 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:weather_bloc/constants.dart';
 import 'package:weather_bloc/presentation/bloc/bloc/weather_bloc.dart';
 import 'package:weather_bloc/presentation/bloc/cubit/swipe_cubit.dart';
 
 import '../../../data/models/current_weather_model.dart';
+import '../../../widgets/custom_buttom.dart';
 import '../../../widgets/custom_clipper.dart';
 import '../../../widgets/shimmer_loading.dart';
 import '../../bloc/cubit/location_cubit.dart';
+import '../settings/settings.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,16 +22,26 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  TextEditingController locController = TextEditingController();
+  late String location;
 
   @override
   void initState() {
     super.initState();
-    Timer.periodic(const Duration(minutes: 15), (timer) {
-      BlocProvider.of<WeatherBloc>(context).add(const LoadCurrentWeather());
+    loadLocation().then((value) {
+      BlocProvider.of<WeatherBloc>(context).add(LoadCurrentWeather(location));
+      Timer.periodic(const Duration(minutes: 20), (timer) {
+        BlocProvider.of<WeatherBloc>(context).add(LoadCurrentWeather(location));
+        // BlocProvider.of<WeatherBloc>(context).add(LoadCurrentWeather(context.read<LocationCubit>().state));
+      });
     });
   }
 
+  Future<void> loadLocation() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String name = prefs.getString('location') ?? 'lalitpur';
+    location =  name;
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Future.delayed(
                       const Duration(seconds: 1),
                       () => BlocProvider.of<WeatherBloc>(context)
-                          .add(const LoadCurrentWeather()),
+                          .add(LoadCurrentWeather(context.read<LocationCubit>().state)),
                     );
                   },
                   child: SafeArea(
@@ -65,7 +78,31 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             );
           }
-          return const Text('No data');
+          if (weatherState is WeatherErrorState){
+            return Center(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(weatherState.error, style: titleStyle, ),
+                const SizedBox(
+                  height: 20,
+                ),
+                CustomButton(
+                  color: primary,
+                  onPressed: (){
+                    Navigator.push(
+                      context, 
+                      MaterialPageRoute(
+                        builder: (context) => SettingsScreen(), 
+                      ) 
+                    );
+                  },
+                  title: "Change Location"
+                ),
+              ],
+            ));
+          }
+          return const Center(child: Text('No data, style: titleStyle,'));
         },
       ),
     );
@@ -203,7 +240,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                     child: Align(
                                         alignment: Alignment.centerRight,
                                         child: GestureDetector(
-                                          onTap: menutap,
+                                          onTap: /* menutap */ () {
+                                            Navigator.push(
+                                              context, 
+                                              MaterialPageRoute(
+                                                builder: (context) => SettingsScreen(), 
+                                              ) 
+                                            );
+                                          },
                                           child: const Icon(
                                             Icons.menu_rounded,
                                             color: white,
@@ -392,14 +436,24 @@ class _HomeScreenState extends State<HomeScreen> {
                                     color: white,
                                     size: 25,
                                   )),
-                              const Expanded(
+                              Expanded(
                                   flex: 1,
                                   child: Align(
                                       alignment: Alignment.centerRight,
-                                      child: Icon(
-                                        Icons.menu_rounded,
-                                        color: white,
-                                        size: 25,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context, 
+                                            MaterialPageRoute(
+                                              builder: (context) => SettingsScreen(), 
+                                            ) 
+                                          );
+                                        },
+                                        child: const Icon(
+                                          Icons.menu_rounded,
+                                          color: white,
+                                          size: 25,
+                                        ),
                                       ))),
                             ],
                           ),
@@ -571,9 +625,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       //degree
                       RichText(
                           text: TextSpan(
-                              text: weatherState.current.tempC
-                                  .toString()
-                                  .split('.')[0],
+                              text: weatherState
+                                .forecast.forecastday.first.hour
+                                .where((element) =>
+                                    element.time.split(" ")[1] == "20:00")
+                                .first
+                                .tempC
+                                .toString()
+                                .split('.')[0],
                               style: headingStyle.copyWith(
                                   fontSize: 50, fontWeight: FontWeight.bold),
                               children: [
@@ -609,116 +668,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
       ),
-    );
-  }
-
-  void menutap() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-            backgroundColor: backgrd,
-            title: Text(
-              'Settings',
-              style: titleStyle,
-            ),
-            content: BlocProvider(
-              create: (context) => WeatherBloc(),
-              child: StatefulBuilder(
-                builder: (context, setState) {
-                  return BlocProvider(
-                    create: (context) => LocationCubit(),
-                    child: BlocBuilder<LocationCubit, String>(
-                      builder: (context, name) {
-                        return SizedBox(
-                            height: MediaQuery.of(context).size.height - 400,
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                        flex: 1,
-                                        child: Text("Location",
-                                            style: subtitleStyle)),
-                                    Expanded(
-                                        flex: 1,
-                                        child: TextField(
-                                          controller: locController,
-                                          style: subtitleStyle,
-                                          decoration: const InputDecoration(
-                                              enabledBorder:
-                                                  UnderlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                          color: white))),
-                                        )),
-                                  ],
-                                ),
-                                MaterialButton(
-                                    color: primary,
-                                    child: Text('Submit', style: titleStyle),
-                                    onPressed: () {
-                                      // context.read<WeatherBloc>().location = locController.text;
-                                      context
-                                          .read<LocationCubit>()
-                                          .saveLocation(locController.text);
-                                      BlocProvider.of<WeatherBloc>(context)
-                                          .add(const UpdateLocation("kathmandu"));
-                                      // BlocProvider.of<WeatherBloc>(context).add(const LoadCurrentWeather());
-                                      Navigator.pop(context);
-                                    }),
-                                Text(
-                                  "Current Location : $name",
-                                  style: titleStyle,
-                                ),
-                              ],
-                            ));
-                      },
-                    ),
-
-                    // Builder(
-                    //   builder: (context) {
-                    //     return SizedBox(
-                    //       height: MediaQuery.of(context).size.height - 400,
-                    //       child: Column(
-                    //         mainAxisSize: MainAxisSize.min,
-                    //         children: [
-                    //           Row(
-                    //             children: [
-                    //               Expanded(
-                    //                   flex: 1,
-                    //                   child: Text("Location", style: subtitleStyle)),
-                    //               Expanded(
-                    //                   flex: 1,
-                    //                   child: TextField(
-                    //                     controller: locController,
-                    //                     style: subtitleStyle,
-                    //                     decoration: const InputDecoration(
-                    //                         enabledBorder: UnderlineInputBorder(
-                    //                             borderSide: BorderSide(color: white))),
-                    //                   )),
-                    //             ],
-                    //           ),
-                    //           MaterialButton(
-                    //               color: primary,
-                    //               child: Text('Submit', style: titleStyle),
-                    //               onPressed: () {
-                    //                 // context.read<WeatherBloc>().location = locController.text;
-                    //                 context.read<LocationCubit>().saveLocation(locController.text);
-                    //                 // BlocProvider.of<WeatherBloc>(context)
-                    //                 //     .add(UpdateLocation(locController.text));
-                    //                 // BlocProvider.of<WeatherBloc>(context).add(const LoadCurrentWeather());
-                    //                 Navigator.pop(context);
-                    //               })
-                    //         ],
-                    //       ),
-                    //     );
-                    //   }
-                    // ),
-                  );
-                },
-              ),
-            ));
-      },
     );
   }
 }

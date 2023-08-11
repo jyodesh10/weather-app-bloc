@@ -7,4 +7,10 @@ class LocationState extends Equatable {
   List<Object> get props => [];
 }
 
-class LocationInitial extends LocationState {}
+class LocationInitial extends LocationState {
+  final String location;
+
+  const LocationInitial({required this.location});
+  @override
+  List<Object> get props => [location];
+}
